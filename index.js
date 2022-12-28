@@ -2,14 +2,12 @@
  * @Author: cbw
  * @Date: 2022-09-23 16:21:05
  * @LastEditors: cbw
- * @LastEditTime: 2022-12-28 17:57:13
+ * @LastEditTime: 2022-12-28 18:37:45
  * @Description:
  */
 class WaterMark {
   #canvasOptions; // canvas默认配置
-  #canvasIndividualOptions; //canvas个性化配置
   #waterMarkStyle; // 水印默认配置
-  #waterMarkIndividualStyle; // 水印个性化配置
   #wm; // 水印DOM
   #Uuid; // 唯一id
   #waterMarkStyleStr; // style字符串
@@ -26,6 +24,7 @@ class WaterMark {
       rotate: -20, // 旋转角度
       fillTextX: 100, // 文本横坐标
       fillTextY: 100, // 文本纵坐标
+      ...canvasOptions, // 合并个性化配置
     };
     // 水印默认配置
     this.#waterMarkStyle = {
@@ -35,13 +34,10 @@ class WaterMark {
       right: 0,
       bottom: 0,
       "z-index": "99999",
-      "pointer-events": "none", // 永远不成文鼠标事件的 target
+      "pointer-events": "none", // 永远不成为鼠标事件的 target
       container: document.body, // 水印创建位置
+      ...waterMarkStyle, // 合并个性化配置
     };
-    // canvas个性化配置
-    this.#canvasIndividualOptions = canvasOptions;
-    // 水印个性化配置
-    this.#waterMarkIndividualStyle = waterMarkStyle;
     // 初始化
     this.#init();
   }
@@ -54,27 +50,18 @@ class WaterMark {
   createCanvasUrl(options = {}) {
     const canvas = document.createElement("canvas"); // 创建canvas
     // 设置属性
-    canvas.setAttribute("width", options?.width ?? this.#canvasOptions.width);
-    canvas.setAttribute(
-      "height",
-      options?.height ?? this.#canvasOptions.height
-    );
+    canvas.setAttribute("width", options?.width);
+    canvas.setAttribute("height", options?.height);
     const ctx = canvas.getContext("2d");
-    ctx.font = options?.font ?? this.#canvasOptions.font;
-    ctx.fillStyle = options?.fillStyle ?? this.#canvasOptions.fillStyle;
-    ctx.textAlign = options?.textAlign ?? this.#canvasOptions.textAlign;
-    ctx.rotate(
-      (Math.PI / 180) * (options?.rotate ?? this.#canvasOptions.rotate)
-    );
-    const fillTextArr = options?.fillTextArr || this.#canvasOptions.fillTextArr;
+    ctx.font = options?.font;
+    ctx.fillStyle = options?.fillStyle;
+    ctx.textAlign = options?.textAlign;
+    ctx.rotate((Math.PI / 180) * options?.rotate);
+    const fillTextArr = options?.fillTextArr;
     for (let i = 0; i < fillTextArr.length; i++) {
       const fillText = fillTextArr[i];
       // 防止多文本重叠
-      ctx.fillText(
-        fillText,
-        options?.fillTextX ?? this.#canvasOptions.fillTextX,
-        (options?.fillTextY ?? this.#canvasOptions.fillTextY) + 20 * i
-      );
+      ctx.fillText(fillText, options?.fillTextX, options?.fillTextY + 20 * i);
     }
     const canvasUrl = canvas.toDataURL(); // 获取base64图片URL
     return canvasUrl;
@@ -92,13 +79,11 @@ class WaterMark {
     this.#waterMarkStyleStr = "";
     // 拼接成style字符串
     for (let key in this.#waterMarkStyle) {
-      this.#waterMarkStyleStr +=
-        key + `:${options?.[key] ?? this.#waterMarkStyle[key]};`;
+      this.#waterMarkStyleStr += key + `:${options?.[key]};`;
     }
     this.#waterMarkStyleStr += `background-image:url(${bgcImgUrl});`;
     waterMark.setAttribute("style", this.#waterMarkStyleStr); // 设置style属性
-    options?.container?.appendChild(waterMark) ??
-      this.#waterMarkStyle.container.appendChild(waterMark);
+    options?.container?.appendChild(waterMark);
     return waterMark;
   }
 
@@ -121,9 +106,9 @@ class WaterMark {
    * 初始化
    */
   #init() {
-    const base64Url = this.createCanvasUrl(this.#canvasIndividualOptions); // base64图片
-    this.#wm = this.createWaterMark(base64Url, this.#waterMarkIndividualStyle); // 创建水印
-    this.#observer();
+    const base64Url = this.createCanvasUrl(this.#canvasOptions); // base64图片
+    this.#wm = this.createWaterMark(base64Url, this.#waterMarkStyle); // 创建水印
+    this.#observer(); // 防止控制台删除水印
   }
 
   /**
@@ -133,8 +118,7 @@ class WaterMark {
     const wmDiv = document.getElementById(this.#Uuid);
     // 防止预移出节点不存在
     if (!wmDiv) {
-      this.#waterMarkIndividualStyle?.container?.removeChild(this.#wm) ??
-        this.#waterMarkStyle.container.removeChild(this.#wm);
+      this.#waterMarkStyle.container.removeChild(this.#wm);
     }
   }
 
@@ -142,9 +126,7 @@ class WaterMark {
    * 防止控制台删除水印
    */
   #observer() {
-    const targetNode =
-      this.#waterMarkIndividualStyle?.container ??
-      this.#waterMarkStyle.container; // 监听节点
+    const targetNode = this.#waterMarkStyle.container; // 监听节点
     // 监听配置
     const observerConfig = {
       subtree: true,
@@ -168,3 +150,5 @@ class WaterMark {
     observer.observe(targetNode, observerConfig);
   }
 }
+
+// export { WaterMark };
