@@ -2,7 +2,7 @@
  * @Author: cbw
  * @Date: 2022-09-23 16:21:05
  * @LastEditors: cbw
- * @LastEditTime: 2022-12-28 18:37:45
+ * @LastEditTime: 2022-12-28 18:41:47
  * @Description:
  */
 class WaterMark {
@@ -151,4 +151,4 @@ class WaterMark {
   }
 }
 
-// export { WaterMark };
+export { WaterMark };
